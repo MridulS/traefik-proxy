@@ -224,6 +224,7 @@ class TraefikProxy(Proxy):
             entryPoints["https"] = {
                 "address": ":" + str(urlparse(self.public_url).port),
                 "tls": {
+                    "minVersion": "VersionTLS12",
                     "certificates": [
                         {"certFile": self.ssl_cert, "keyFile": self.ssl_key}
                     ]
