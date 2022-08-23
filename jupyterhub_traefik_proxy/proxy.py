@@ -23,7 +23,7 @@ from os.path import abspath, dirname, join
 from subprocess import Popen
 from urllib.parse import urlparse
 
-from traitlets import Any, Bool, Dict, Integer, Unicode, default
+from traitlets import Any, Bool, Dict, Integer, Unicode, default, List
 from tornado.httpclient import AsyncHTTPClient
 
 from jupyterhub.utils import exponential_backoff, url_path_join, new_token
@@ -56,6 +56,22 @@ class TraefikProxy(Proxy):
 
     traefik_api_password = Unicode(
         config=True, help="""The password for traefik api login"""
+    )
+
+    tls_min_version = Unicode(
+        "VersionTLS12", config=True, help="""Specify minimum TLS Version"""
+    )
+    tls_cipher_suites = List(
+        default_value=[
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+        ],
+        config=True,
+        help="""Specify ciphersuites in traefik config""",
     )
 
     @default("traefik_api_password")
@@ -224,10 +240,11 @@ class TraefikProxy(Proxy):
             entryPoints["https"] = {
                 "address": ":" + str(urlparse(self.public_url).port),
                 "tls": {
-                    "minVersion": "VersionTLS12",
+                    "minVersion": self.tls_min_version,
+                    "cipherSuites": self.tls_cipher_suites,
                     "certificates": [
                         {"certFile": self.ssl_cert, "keyFile": self.ssl_key}
-                    ]
+                    ],
                 },
             }
         else:
